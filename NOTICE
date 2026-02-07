@@ -1,0 +1,16 @@
+homelab-screen
+Copyright (C) 2026 homelab-screen contributors
+
+License
+- This project is licensed under GNU GPL v3.0 only.
+- See LICENSE for the full text.
+
+Upstream provenance
+- Protocol-level behavior for the Thermalright AIO Cooler USB LCD was derived from
+  and informed by:
+  trlcd_libusb by NoNameOnFile
+  https://github.com/NoNameOnFile/trlcd_libusb
+  upstream commit: 34ef714f85beccb99eaa94197daac5179595de92
+
+This repository contains substantial rework and restructuring, but is distributed under
+GPL-3.0-only to preserve license compatibility and attribution best practice.

@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config libusb-1.0-0-dev clang
+
+      - name: Build (release)
+        run: |
+          make clean
+          make
+
+      - name: Unit tests
+        run: make test
+
+      - name: Coverage (100% src/*)
+        run: make coverage
+
+      - name: Build (sanitizers)
+        run: make debug
+
+      - name: Clean
+        run: make clean
+
+  lint-static:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config libusb-1.0-0-dev clang
+
+      - name: Compile with warnings as errors
+        run: |
+          make clean
+          make CFLAGS='-Wall -Wextra -pedantic -Werror -O2'
+
+      - name: Static analysis (clang --analyze)
+        run: |
+          mapfile -t SRC_FILES < <(find src -maxdepth 1 -type f -name '*.c' | sort)
+          if [ "${#SRC_FILES[@]}" -eq 0 ]; then
+            echo "No C source files found under src/"
+            exit 1
+          fi
+          clang --analyze "${SRC_FILES[@]}" $(pkg-config --cflags libusb-1.0)
+
+      - name: Clean
+        run: make clean

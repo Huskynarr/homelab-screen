@@ -1,0 +1,5 @@
+# Thermalright AIO Cooler USB LCD (240x320)
+# Allows non-root users to access the display for writing frames.
+# Install: sudo cp 99-thermalright-lcd.rules /etc/udev/rules.d/
+# Reload: sudo udevadm control --reload-rules && sudo udevadm trigger
+SUBSYSTEM=="usb", ATTR{idVendor}=="0416", ATTR{idProduct}=="5302", MODE="0660", TAG+="uaccess"

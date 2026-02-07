@@ -1,0 +1,31 @@
+# Build artifacts
+homelab-screen
+tests/test_homelab_screen
+*.o
+*.d
+*.a
+dist/
+
+# Debug symbols
+*.dSYM/
+*.plist
+
+# Coverage artifacts
+*.gcno
+*.gcda
+*.gcov
+lcov.info
+coverage/
+coverage.out
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS files
+.DS_Store
+
+# Local agent/project tooling
+.claude/

@@ -1,0 +1,91 @@
+name: Release (Rolling)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: rolling-release
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config libusb-1.0-0-dev clang
+
+      - name: Build and test
+        run: |
+          make clean
+          make
+          make test
+          make coverage
+          make CFLAGS='-Wall -Wextra -pedantic -Werror -O2'
+          mapfile -t SRC_FILES < <(find src -maxdepth 1 -type f -name '*.c' | sort)
+          if [ "${#SRC_FILES[@]}" -eq 0 ]; then
+            echo "No C source files found under src/"
+            exit 1
+          fi
+          clang --analyze "${SRC_FILES[@]}" $(pkg-config --cflags libusb-1.0)
+
+      - name: Clean
+        run: make clean
+
+  rolling-release:
+    runs-on: ubuntu-latest
+    needs: verify
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config libusb-1.0-0-dev
+
+      - name: Build release binary
+        run: |
+          make clean
+          make
+
+      - name: Create release package
+        run: make package
+
+      - name: Move rolling tag to current commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -fa rolling -m "Rolling release for ${GITHUB_SHA}"
+          git push origin refs/tags/rolling --force
+
+      - name: Publish rolling release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: rolling
+          name: Rolling Release
+          body: |
+            Auto-updated rolling release for commit `${{ github.sha }}`.
+            This release is intentionally replaced on each successful run from `main`.
+          files: |
+            dist/homelab-screen-linux-amd64.tar.gz
+            dist/homelab-screen-linux-amd64.tar.gz.sha256
+          overwrite_files: true
+          fail_on_unmatched_files: true
+          make_latest: true
